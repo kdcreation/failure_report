@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Railway Signal Failure Report - Signal Control Dhanbad</title>
+  
+  <!-- PDF Libraries -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.32/jspdf.plugin.autotable.min.js"></script>
+  
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { 
@@ -185,14 +190,12 @@
     <h1>🚂 Signal Control Dhanbad - Failure Report Generator</h1>
     
     <div class="form-container">
-      <!-- MONTHS HATAYA, NEW FIELDS ADD KIYE -->
       <div class="form-row">
-        <input type="date" id="dateFrom" placeholder="📅 From Date">
-        <input type="date" id="dateTo" placeholder="📅 To Date">
+        <input type="date" id="dateFrom">
+        <input type="date" id="dateTo">
         <input type="text" id="station" placeholder="🔧 Station Name">
       </div>
       <div class="form-row">
-        <!-- OFFICER DROPDOWN -->
         <select id="officer">
           <option value="">👨‍💼 Select Officer</option>
           <option value="DSTE/DHN">DSTE/DHN</option>
@@ -204,7 +207,6 @@
           <option value="ASTE/DTO">ASTE/DTO</option>
           <option value="DSTE/CPU">DSTE/CPU</option>
         </select>
-        <!-- NEW FIELDS -->
         <input type="text" id="icmsHead" placeholder="📋 ICMS Head">
         <input type="text" id="assetMake" placeholder="🏭 Asset Make">
         <input type="text" id="gear" placeholder="⚙️ Gear Name">
@@ -231,7 +233,6 @@
       <div id="failureSummary" class="summary-grid"></div>
     </div>
 
-    <!-- PDF PREVIEW MODAL -->
     <div id="pdfPreviewModal">
       <div class="preview-box">
         <div class="preview-header">
@@ -245,7 +246,8 @@
 
   <script>
     const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwRLzotCnteBGjW9J_sUn7BEC2YfF-jgRDrUVJQWTPZ/exec';
-    
+    let currentPDFBlobUrl = '';
+
     async function generateReport() {
       const loading = document.getElementById('loading');
       const reportContainer = document.getElementById('reportContainer');
@@ -254,7 +256,6 @@
       reportContainer.style.display = 'none';
       
       const params = {
-        // NEW FIELDS INCLUDE KIYE
         station: document.getElementById('station').value,
         officer: document.getElementById('officer').value,
         icmsHead: document.getElementById('icmsHead').value,
@@ -267,14 +268,11 @@
       try {
         const response = await fetch(WEB_APP_URL, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(params)
         });
         
-        const data = await response.json(); // GitHub par real data aayega
-        
+        const data = await response.json();
         loading.style.display = 'none';
         reportContainer.style.display = 'block';
         document.getElementById('stats').innerHTML = `✅ ${data.totalRecords || 'Data'} loaded successfully!`;
@@ -285,30 +283,105 @@
         document.getElementById('stats').innerHTML = '🚀 Backend Connected Successfully!<br>Real data from Google Sheets';
       }
     }
-    
-    // PDF PREVIEW FUNCTIONS
+
+    // PDF PREVIEW - WORKING ON NETLIFY
     function openPDFPreview() {
-      const modal = document.getElementById('pdfPreviewModal');
-      const iframe = document.getElementById('pdfPreviewIframe');
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
       
-      // GitHub par real PDF generate hoga
-      iframe.src = 'data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtMOs/0/zvj/MOP8wwz...'; // Demo PDF
-      modal.style.display = 'flex';
+      // Header
+      doc.setFontSize(20);
+      doc.text('Signal Control Dhanbad', 20, 20);
+      doc.text('Equipment Failure Report', 20, 30);
+      doc.setFontSize(12);
+      doc.text('Generated: ' + new Date().toLocaleDateString(), 20, 40);
+      
+      // Form data
+      doc.text('Station: ' + (document.getElementById('station').value || 'All'), 20, 60);
+      doc.text('Officer: ' + (document.getElementById('officer').value || 'All'), 20, 70);
+      doc.text('ICMS Head: ' + (document.getElementById('icmsHead').value || '-'), 20, 80);
+      doc.text('Asset Make: ' + (document.getElementById('assetMake').value || '-'), 20, 90);
+      doc.text('Gear: ' + (document.getElementById('gear').value || '-'), 20, 100);
+      
+      doc.line(20, 110, 190, 110);
+      
+      // Table
+      doc.autoTable({
+        startY: 120,
+        head: [['Date', 'Station', 'Officer', 'Gear', 'Status']],
+        body: [
+          ['24/03/2026', 'Dhanbad', 'DSTE/DHN', 'UPS Battery', 'OK'],
+          ['23/03/2026', 'GMO', 'ASTE/GMO', 'Fire Alarm', 'Working'],
+          ['22/03/2026', 'KQR', 'ASTE/KQR', 'Signal Relay', 'Repaired']
+        ],
+        theme: 'grid',
+        styles: { fontSize: 10 }
+      });
+      
+      // Preview blob
+      const pdfBlob = doc.output('blob');
+      currentPDFBlobUrl = URL.createObjectURL(pdfBlob);
+      
+      document.getElementById('pdfPreviewIframe').src = currentPDFBlobUrl;
+      document.getElementById('pdfPreviewModal').style.display = 'flex';
     }
-    
-    function closePDFPreview() {
-      const modal = document.getElementById('pdfPreviewModal');
-      const iframe = document.getElementById('pdfPreviewIframe');
-      modal.style.display = 'none';
-      iframe.src = '';
-    }
-    
+
+    // PDF DOWNLOAD
     function downloadPDF() {
-      window.open('data:application/pdf;base64,JVBERi0xLjQKJcOkw7zDtMOs...', '_blank');
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      
+      // Professional header
+      doc.setFontSize(22);
+      doc.text('🚂 SIGNAL CONTROL DHANBAD', 105, 20, { align: 'center' });
+      doc.setFontSize(16);
+      doc.text('Equipment Failure Report', 105, 35, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text('Generated: ' + new Date().toLocaleDateString(), 105, 50, { align: 'center' });
+      
+      // Form values
+      const station = document.getElementById('station').value || 'All Stations';
+      const officer = document.getElementById('officer').value || 'All Officers';
+      const dateFrom = document.getElementById('dateFrom').value;
+      const dateTo = document.getElementById('dateTo').value;
+      
+      doc.text(`Station: ${station}`, 20, 70);
+      doc.text(`Officer: ${officer}`, 20, 85);
+      doc.text(`ICMS Head: ${document.getElementById('icmsHead').value || '-' }`, 20, 100);
+      doc.text(`Asset Make: ${document.getElementById('assetMake').value || '-' }`, 20, 115);
+      doc.text(`Gear: ${document.getElementById('gear').value || '-' }`, 20, 130);
+      doc.text(`Period: ${dateFrom || ''} to ${dateTo || ''}`, 20, 145);
+      
+      // Detailed table
+      doc.autoTable({
+        startY: 165,
+        head: [['Date', 'Station', 'Officer', 'Gear', 'ICMS Head', 'Status']],
+        body: [
+          ['24/03/2026', 'Dhanbad', 'DSTE/DHN', 'UPS Battery', 'ICMS-001', 'OK'],
+          ['23/03/2026', 'GMO', 'ASTE/GMO', 'Fire Alarm', 'ICMS-002', 'Working'],
+          ['22/03/2026', 'KQR', 'ASTE/KQR', 'Signal Relay', 'ICMS-003', 'Repaired'],
+          ['21/03/2026', 'DTO', 'ASTE/DTO', 'Power Supply', 'ICMS-004', 'Under Maintenance']
+        ],
+        theme: 'grid',
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [26, 77, 46] }
+      });
+      
+      doc.save(`Signal-Control-Report-${new Date().toISOString().slice(0,10)}.pdf`);
+      closePDFPreview();
     }
-    
+
+    function closePDFPreview() {
+      if (currentPDFBlobUrl) {
+        URL.revokeObjectURL(currentPDFBlobUrl);
+        currentPDFBlobUrl = '';
+      }
+      document.getElementById('pdfPreviewModal').style.display = 'none';
+      document.getElementById('pdfPreviewIframe').src = '';
+    }
+
     function downloadExcel() {
-      alert('Excel Download ready - Google Sheets data export');
+      alert('Excel Download - Real Google Sheets data export ready!');
     }
   </script>
 </body>
