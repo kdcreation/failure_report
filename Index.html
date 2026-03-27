@@ -1,388 +1,178 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Railway Signal Failure Report - Signal Control Dhanbad</title>
-  
-  <!-- PDF Libraries -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.32/jspdf.plugin.autotable.min.js"></script>
-  
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #1a4d2e 0%, #2d5016 50%, #1f3a1f 100%);
-      color: white; 
-      min-height: 100vh; 
-      padding: 20px;
-    }
-    .container { max-width: 1400px; margin: 0 auto; }
-    h1 { text-align: center; margin-bottom: 30px; color: #a8e6cf; }
-    
-    .form-container {
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-      padding: 30px;
-      border-radius: 20px;
-      margin-bottom: 30px;
-      border: 1px solid rgba(255,255,255,0.2);
-    }
-    
-    .form-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-    
-    input, select {
-      padding: 15px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-radius: 12px;
-      background: rgba(255,255,255,0.1);
-      color: white;
-      font-size: 16px;
-      backdrop-filter: blur(10px);
-    }
-    input::placeholder { color: rgba(255,255,255,0.7); }
-    input:focus, select:focus { 
-      outline: none; 
-      border-color: #a8e6cf; 
-      box-shadow: 0 0 10px rgba(168,230,207,0.3);
-    }
-    
-    .generate-btn {
-      background: linear-gradient(45deg, #28a745, #20c997);
-      color: white;
-      padding: 18px 40px;
-      border: none;
-      border-radius: 12px;
-      font-size: 18px;
-      font-weight: bold;
-      cursor: pointer;
-      grid-column: 1 / -1;
-      transition: all 0.3s;
-    }
-    .generate-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(40,167,69,0.4); }
-    
-    #loading {
-      display: none;
-      text-align: center;
-      padding: 40px;
-      font-size: 20px;
-      color: #a8e6cf;
-    }
-    
-    #reportContainer {
-      display: none;
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-      padding: 30px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.2);
-      margin-top: 20px;
-    }
-    
-    .action-buttons {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 30px;
-      flex-wrap: wrap;
-    }
-    .download-btn {
-      background: linear-gradient(45deg, #007bff, #0056b3);
-      color: white;
-      padding: 12px 25px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: all 0.3s;
-    }
-    .download-btn:hover { transform: translateY(-2px); }
-    
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 30px;
-      background: rgba(255,255,255,0.95);
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-    }
-    th {
-      background: linear-gradient(45deg, #28a745, #20c997);
-      color: white;
-      padding: 15px;
-      text-align: left;
-      font-weight: bold;
-    }
-    td { padding: 12px 15px; border-bottom: 1px solid #eee; }
-    tr:hover td { background: #f8f9fa; }
-    
-    .summary-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
-      margin-top: 30px;
-    }
-    .summary-card {
-      background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(168,230,207,0.3));
-      padding: 25px;
-      border-radius: 15px;
-      text-align: center;
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.3);
-    }
-    .summary-card h4 { color: #a8e6cf; margin-bottom: 10px; }
-    .count { font-size: 36px; font-weight: bold; color: #d32f2f; }
-
-    /* PDF PREVIEW MODAL */
-    #pdfPreviewModal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    .preview-box {
-      width: 90vw;
-      height: 85vh;
-      background: white;
-      border-radius: 15px;
-      overflow: hidden;
-      box-shadow: 0 30px 60px rgba(0,0,0,0.4);
-      position: relative;
-    }
-    .preview-header {
-      padding: 15px 20px;
-      background: #1a4d2e;
-      color: white;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .preview-close {
-      background: none;
-      color: white;
-      border: none;
-      font-size: 18px;
-      cursor: pointer;
-    }
-    .preview-iframe {
-      width: 100%;
-      height: calc(100% - 60px);
-      border: none;
-    }
-    
-    @media (max-width: 768px) {
-      .form-row { grid-template-columns: 1fr; }
-      .action-buttons { flex-direction: column; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Railway Signaling Report Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com"></script>
+    <script src="https://cdnjs.cloudflare.com"></script>
+    <script src="https://cdnjs.cloudflare.com"></script>
+    <style>
+        .loader { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
+        @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
 </head>
-<body>
-  <div class="container">
-    <h1>🚂 Signal Control Dhanbad - Failure Report Generator</h1>
-    
-    <div class="form-container">
-      <div class="form-row">
-        <input type="date" id="dateFrom">
-        <input type="date" id="dateTo">
-        <input type="text" id="station" placeholder="🔧 Station Name">
-      </div>
-      <div class="form-row">
-        <select id="officer">
-          <option value="">👨‍💼 Select Officer</option>
-          <option value="DSTE/DHN">DSTE/DHN</option>
-          <option value="DSTE/W/DHN">DSTE/W/DHN</option>
-          <option value="ASTE/DHN">ASTE/DHN</option>
-          <option value="ASTE/GMO">ASTE/GMO</option>
-          <option value="ASTE/KQR">ASTE/KQR</option>
-          <option value="ASTE/BRKA">ASTE/BRKA</option>
-          <option value="ASTE/DTO">ASTE/DTO</option>
-          <option value="DSTE/CPU">DSTE/CPU</option>
-        </select>
-        <input type="text" id="icmsHead" placeholder="📋 ICMS Head">
-        <input type="text" id="assetMake" placeholder="🏭 Asset Make">
-        <input type="text" id="gear" placeholder="⚙️ Gear Name">
-      </div>
-      <button class="generate-btn" onclick="generateReport()">
-        🔍 Generate Report
-      </button>
-    </div>
-
-    <div id="loading" style="display:none;">
-      ⏳ Loading report data... Please wait
-    </div>
-
-    <div id="reportContainer">
-      <div class="action-buttons">
-        <button class="download-btn" onclick="openPDFPreview()">👁️ Preview PDF</button>
-        <button class="download-btn" onclick="downloadPDF()">📄 Download PDF</button>
-        <button class="download-btn" onclick="downloadExcel()">📊 Download Excel</button>
-        <button class="download-btn" onclick="generateReport()" style="background:#28a745;">🔄 Refresh Report</button>
-      </div>
-      
-      <div id="stats" style="text-align:center; margin-bottom:20px; font-size:18px;"></div>
-      <div id="reportTable"></div>
-      <div id="failureSummary" class="summary-grid"></div>
-    </div>
-
-    <div id="pdfPreviewModal">
-      <div class="preview-box">
-        <div class="preview-header">
-          <span>📄 PDF Preview - Signal Failure Report</span>
-          <button class="preview-close" onclick="closePDFPreview()">✖</button>
+<body class="bg-gray-50 font-sans">
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Header -->
+        <div class="bg-blue-800 text-white p-6 rounded-xl shadow-lg mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold italic">S&T Failure Reporting System</h1>
+                <p class="text-blue-100 text-sm">East Central Railway : Dhanbad - Multi-Filter Query Engine</p>
+            </div>
+            <img src="https://upload.wikimedia.org" class="h-16">
         </div>
-        <iframe id="pdfPreviewIframe" class="preview-iframe" src=""></iframe>
-      </div>
+
+        <!-- Filters Section -->
+        <div class="bg-white p-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 border border-gray-200">
+            <div>
+                <label class="block text-sm font-medium text-gray-700">From Date</label>
+                <input type="date" id="startDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">To Date</label>
+                <input type="date" id="endDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Officer</label>
+                <select id="officer" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                  <option value="">All Officers</option>
+                  <option>DSTE/DHN</option>
+                  <option>DSTE/W/DHN</option>
+                  <option>ASTE/DHN</option>
+                  <option>ASTE/GMO</option>
+                  <option>ASTE/KQR</option>
+                  <option>ASTE/BRKA</option>
+                  <option>ASTE/DTO</option>
+                  <option>DSTE/CPU</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Asset Make</label>
+                <select id="asset" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                  <option value="">All Makes</option>
+                  <option>CEL</option>
+                  <option>GGT</option>
+                  <option>SIEMNES</option>
+                  <option>ELDYNE</option>
+                </select>
+            </div>
+            <div class="md:col-span-2">
+                <label class="block text-sm font-medium text-gray-700">Specific Defect Search</label>
+                <select id="defect" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                    <option value="">-- No Defect Selected --</option>
+                    <option value="G/Joint Defective">G/Joint Defective</option>
+                    <option value="Cable defective">Cable defective</option>
+                    <option value="Obstruction in point">Obstruction in point</option>
+                </select>
+            </div>
+            <div class="md:col-span-2 flex items-end">
+                <button onclick="fetchData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 shadow-md">
+                    Generate Report
+                </button>
+            </div>
+        </div>
+
+        <!-- Preview Area -->
+        <div id="loading" class="hidden flex justify-center py-10">
+            <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
+        </div>
+
+        <div id="previewContainer" class="hidden bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div class="bg-gray-100 p-4 border-b flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-800">Report Preview</h2>
+                <div class="flex space-x-2">
+                    <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-4 rounded">Download Excel</button>
+                    <button onclick="exportToPDF()" class="bg-red-600 hover:bg-red-700 text-white text-xs py-2 px-4 rounded">Download PDF</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto max-h-[500px]">
+                <table id="reportTable" class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-800 text-white sticky top-0" id="tableHeader"></thead>
+                    <tbody class="bg-white divide-y divide-gray-200" id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
-  </div>
 
-  <script>
-    const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbwRLzotCnteBGjW9J_sUn7BEC2YfF-jgRDrUVJQWTPZ/exec';
-    let currentPDFBlobUrl = '';
 
-    async function generateReport() {
-      const loading = document.getElementById('loading');
-      const reportContainer = document.getElementById('reportContainer');
-      
-      loading.style.display = 'block';
-      reportContainer.style.display = 'none';
-      
-      const params = {
-        station: document.getElementById('station').value,
-        officer: document.getElementById('officer').value,
-        icmsHead: document.getElementById('icmsHead').value,
-        assetMake: document.getElementById('assetMake').value,
-        gear: document.getElementById('gear').value,
-        dateFrom: document.getElementById('dateFrom').value,
-        dateTo: document.getElementById('dateTo').value
-      };
-      
-      try {
-        const response = await fetch(WEB_APP_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(params)
-        });
-        
-        const data = await response.json();
-        loading.style.display = 'none';
-        reportContainer.style.display = 'block';
-        document.getElementById('stats').innerHTML = `✅ ${data.totalRecords || 'Data'} loaded successfully!`;
-        
-      } catch(error) {
-        loading.style.display = 'none';
-        reportContainer.style.display = 'block';
-        document.getElementById('stats').innerHTML = '🚀 Backend Connected Successfully!<br>Real data from Google Sheets';
-      }
-    }
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNUtRBJeFvF4mnSeX3I-iBiHX1hSYMWIr1SYFDimD0oTfkaqJWmiNZi3iRHdoYUbPA/exec';
+        let currentData = [];
 
-    // PDF PREVIEW - WORKING ON NETLIFY
-    function openPDFPreview() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      // Header
-      doc.setFontSize(20);
-      doc.text('Signal Control Dhanbad', 20, 20);
-      doc.text('Equipment Failure Report', 20, 30);
-      doc.setFontSize(12);
-      doc.text('Generated: ' + new Date().toLocaleDateString(), 20, 40);
-      
-      // Form data
-      doc.text('Station: ' + (document.getElementById('station').value || 'All'), 20, 60);
-      doc.text('Officer: ' + (document.getElementById('officer').value || 'All'), 20, 70);
-      doc.text('ICMS Head: ' + (document.getElementById('icmsHead').value || '-'), 20, 80);
-      doc.text('Asset Make: ' + (document.getElementById('assetMake').value || '-'), 20, 90);
-      doc.text('Gear: ' + (document.getElementById('gear').value || '-'), 20, 100);
-      
-      doc.line(20, 110, 190, 110);
-      
-      // Table
-      doc.autoTable({
-        startY: 120,
-        head: [['Date', 'Station', 'Officer', 'Gear', 'Status']],
-        body: [
-          ['24/03/2026', 'Dhanbad', 'DSTE/DHN', 'UPS Battery', 'OK'],
-          ['23/03/2026', 'GMO', 'ASTE/GMO', 'Fire Alarm', 'Working'],
-          ['22/03/2026', 'KQR', 'ASTE/KQR', 'Signal Relay', 'Repaired']
-        ],
-        theme: 'grid',
-        styles: { fontSize: 10 }
-      });
-      
-      // Preview blob
-      const pdfBlob = doc.output('blob');
-      currentPDFBlobUrl = URL.createObjectURL(pdfBlob);
-      
-      document.getElementById('pdfPreviewIframe').src = currentPDFBlobUrl;
-      document.getElementById('pdfPreviewModal').style.display = 'flex';
-    }
+        async function fetchData() {
+            const loading = document.getElementById('loading');
+            const preview = document.getElementById('previewContainer');
+            loading.classList.remove('hidden');
+            preview.classList.add('hidden');
 
-    // PDF DOWNLOAD
-    function downloadPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      
-      // Professional header
-      doc.setFontSize(22);
-      doc.text('🚂 SIGNAL CONTROL DHANBAD', 105, 20, { align: 'center' });
-      doc.setFontSize(16);
-      doc.text('Equipment Failure Report', 105, 35, { align: 'center' });
-      doc.setFontSize(12);
-      doc.text('Generated: ' + new Date().toLocaleDateString(), 105, 50, { align: 'center' });
-      
-      // Form values
-      const station = document.getElementById('station').value || 'All Stations';
-      const officer = document.getElementById('officer').value || 'All Officers';
-      const dateFrom = document.getElementById('dateFrom').value;
-      const dateTo = document.getElementById('dateTo').value;
-      
-      doc.text(`Station: ${station}`, 20, 70);
-      doc.text(`Officer: ${officer}`, 20, 85);
-      doc.text(`ICMS Head: ${document.getElementById('icmsHead').value || '-' }`, 20, 100);
-      doc.text(`Asset Make: ${document.getElementById('assetMake').value || '-' }`, 20, 115);
-      doc.text(`Gear: ${document.getElementById('gear').value || '-' }`, 20, 130);
-      doc.text(`Period: ${dateFrom || ''} to ${dateTo || ''}`, 20, 145);
-      
-      // Detailed table
-      doc.autoTable({
-        startY: 165,
-        head: [['Date', 'Station', 'Officer', 'Gear', 'ICMS Head', 'Status']],
-        body: [
-          ['24/03/2026', 'Dhanbad', 'DSTE/DHN', 'UPS Battery', 'ICMS-001', 'OK'],
-          ['23/03/2026', 'GMO', 'ASTE/GMO', 'Fire Alarm', 'ICMS-002', 'Working'],
-          ['22/03/2026', 'KQR', 'ASTE/KQR', 'Signal Relay', 'ICMS-003', 'Repaired'],
-          ['21/03/2026', 'DTO', 'ASTE/DTO', 'Power Supply', 'ICMS-004', 'Under Maintenance']
-        ],
-        theme: 'grid',
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [26, 77, 46] }
-      });
-      
-      doc.save(`Signal-Control-Report-${new Date().toISOString().slice(0,10)}.pdf`);
-      closePDFPreview();
-    }
+            const params = new URLSearchParams({
+                start: document.getElementById('startDate').value,
+                end: document.getElementById('endDate').value,
+                officer: document.getElementById('officer').value,
+                asset: document.getElementById('asset').value,
+                defect: document.getElementById('defect').value
+            });
 
-    function closePDFPreview() {
-      if (currentPDFBlobUrl) {
-        URL.revokeObjectURL(currentPDFBlobUrl);
-        currentPDFBlobUrl = '';
-      }
-      document.getElementById('pdfPreviewModal').style.display = 'none';
-      document.getElementById('pdfPreviewIframe').src = '';
-    }
+            try {
+                const response = await fetch(`${SCRIPT_URL}?${params}`);
+                const data = await response.json();
+                currentData = data;
+                renderTable(data);
+                loading.classList.add('hidden');
+                preview.classList.remove('hidden');
+            } catch (error) {
+                alert("Error fetching data. Check script URL.");
+                loading.classList.add('hidden');
+            }
+        }
 
-    function downloadExcel() {
-      alert('Excel Download - Real Google Sheets data export ready!');
-    }
-  </script>
+        function renderTable(data) {
+    const headerRow = document.getElementById('tableHeader');
+    const bodyRow = document.getElementById('tableBody');
+    
+    // Header Render
+    headerRow.innerHTML = `<tr>${data.headers.map(h => 
+        `<th class="px-4 py-3 text-left font-bold uppercase tracking-wider border-r border-gray-700 whitespace-nowrap bg-gray-800 text-white sticky top-0 font-sans text-xs">
+            ${h}
+        </th>`).join('')}</tr>`;
+
+    // Body Render with Auto-Increment S/No and Remarks Wrap
+    bodyRow.innerHTML = data.rows.map((row, index) => {
+        return `<tr class="hover:bg-gray-50 transition duration-150">
+            ${row.map((cell, cellIndex) => {
+                // S/No logic (Column A is Index 0)
+                if (cellIndex === 0) {
+                    return `<td class="px-4 py-2 border-r border-gray-200 text-center font-bold">${index + 1}</td>`;
+                }
+                
+                // Remarks logic (Column J is Index 9)
+                if (cellIndex === 9) {
+                    return `<td class="px-4 py-2 border-r border-gray-200 min-w-[300px] max-w-[400px]">
+                                <div class="truncate hover:whitespace-normal cursor-pointer" title="Click to expand">
+                                    ${cell || '-'}
+                                </div>
+                            </td>`;
+                }
+
+                return `<td class="px-4 py-2 whitespace-nowrap border-r border-gray-200">${cell || '-'}</td>`;
+            }).join('')}
+        </tr>`;
+    }).join('');
+}
+
+        function exportToExcel() {
+            const wb = XLSX.utils.table_to_book(document.getElementById('reportTable'), {sheet: "Report"});
+            XLSX.writeFile(wb, "Railway_Report.xlsx");
+        }
+
+        function exportToPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('l', 'pt', 'a4');
+            doc.autoTable({ html: '#reportTable', theme: 'grid', styles: { fontSize: 7 } });
+            doc.save("Railway_Report.pdf");
+        }
+    </script>
 </body>
 </html>
