@@ -4,9 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Railway Signaling Report Dashboard</title>
+    <!-- Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fixed Script Links -->
-    <script src="https://cdnjs.cloudflare.com"></script>
+
+    <!-- Excel (SheetJS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <!-- PDF (jsPDF & AutoTable Plugin) - Fixed Full Links -->
     <script src="https://cdnjs.cloudflare.com"></script>
     <script src="https://cdnjs.cloudflare.com"></script>
     <style>
@@ -136,23 +140,64 @@
             }).join('');
         }
 
-        function exportToExcel() {
-            const table = document.getElementById('reportTable');
-            const wb = XLSX.utils.table_to_book(table, {sheet: "Failure_Report"});
-            XLSX.writeFile(wb, "Railway_Report.xlsx");
-        }
+        // EXCEL EXPORT
+function exportToExcel() {
+    try {
+        const table = document.getElementById('reportTable');
+        if (!table || table.rows.length <= 1) return alert("Pehle report generate karein!");
+        
+        // table_to_book table se data uthata hai
+        const wb = XLSX.utils.table_to_book(table, { sheet: "Failure_Report" });
+        XLSX.writeFile(wb, "Railway_Failure_Report.xlsx");
+    } catch (e) {
+        console.error("Excel Error:", e);
+        alert("Excel export mein error: " + e.message);
+    }
+}
 
-        function exportToPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('l', 'pt', 'a4');
+        // PDF EXPORT
+function exportToPDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('l', 'pt', 'a4');
+
+        // Check if AutoTable is available globally if not on doc
+        const autoTable = doc.autoTable || window.jspdf.autoTable;
+
+        if (typeof autoTable !== 'function') {
+            // Forcefully try to call it if it's attached to the window
+            if (window.jspdf && typeof window.jspdf.autoTable === 'function') {
+                 window.jspdf.autoTable(doc, {
+                    html: '#reportTable',
+                    theme: 'grid',
+                    styles: { fontSize: 7, overflow: 'linebreak' },
+                    columnStyles: { 9: { cellWidth: 150 } }
+                });
+            } else {
+                throw new Error("AutoTable plugin not found on window or doc object.");
+            }
+        } else {
+            // Standard way
             doc.autoTable({ 
                 html: '#reportTable',
+                theme: 'grid',
                 styles: { fontSize: 7, overflow: 'linebreak' },
-                columnStyles: { 9: { cellWidth: 150 } }
+                columnStyles: { 9: { cellWidth: 150 } },
+                margin: { top: 40 }
             });
-            doc.save("Railway_Report.pdf");
         }
 
+        doc.save("Railway_Report.pdf");
+        console.log("PDF Saved successfully!");
+
+    } catch (e) {
+        console.error("Full PDF Error:", e);
+        alert("PDF Export Failed. Please refresh (Ctrl+F5) and try again.");
+    }
+}
+
+
+    // WORD EXPORT
         function exportToWord() {
             let header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org'><head><meta charset='utf-8'></head><body>";
             let footer = "</body></html>";
