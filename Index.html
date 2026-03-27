@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Railway Signaling Report Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fixed Script Links -->
     <script src="https://cdnjs.cloudflare.com"></script>
     <script src="https://cdnjs.cloudflare.com"></script>
     <script src="https://cdnjs.cloudflare.com"></script>
@@ -38,24 +39,16 @@
                 <label class="block text-sm font-medium text-gray-700">Officer</label>
                 <select id="officer" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
                   <option value="">All Officers</option>
-                  <option>DSTE/DHN</option>
-                  <option>DSTE/W/DHN</option>
-                  <option>ASTE/DHN</option>
-                  <option>ASTE/GMO</option>
-                  <option>ASTE/KQR</option>
-                  <option>ASTE/BRKA</option>
-                  <option>ASTE/DTO</option>
-                  <option>DSTE/CPU</option>
+                  <option>DSTE/DHN</option><option>DSTE/W/DHN</option><option>ASTE/DHN</option>
+                  <option>ASTE/GMO</option><option>ASTE/KQR</option><option>ASTE/BRKA</option>
+                  <option>ASTE/DTO</option><option>DSTE/CPU</option>
                 </select>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Asset Make</label>
                 <select id="asset" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
                   <option value="">All Makes</option>
-                  <option>CEL</option>
-                  <option>GGT</option>
-                  <option>SIEMNES</option>
-                  <option>ELDYNE</option>
+                  <option>CEL</option><option>GGT</option><option>SIEMNES</option><option>ELDYNE</option>
                 </select>
             </div>
             <div class="md:col-span-2">
@@ -85,9 +78,10 @@
                 <div class="flex space-x-2">
                     <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-4 rounded">Download Excel</button>
                     <button onclick="exportToPDF()" class="bg-red-600 hover:bg-red-700 text-white text-xs py-2 px-4 rounded">Download PDF</button>
+                    <button onclick="exportToWord()" class="bg-gray-600 hover:bg-gray-700 text-white text-xs py-2 px-4 rounded">Download Word</button>
                 </div>
             </div>
-            <div class="overflow-x-auto max-h-[500px]">
+            <div class="overflow-x-auto max-h-[600px]">
                 <table id="reportTable" class="min-w-full divide-y divide-gray-200 text-sm">
                     <thead class="bg-gray-800 text-white sticky top-0" id="tableHeader"></thead>
                     <tbody class="bg-white divide-y divide-gray-200" id="tableBody"></tbody>
@@ -96,11 +90,9 @@
         </div>
     </div>
 
-
     <script>
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyNUtRBJeFvF4mnSeX3I-iBiHX1hSYMWIr1SYFDimD0oTfkaqJWmiNZi3iRHdoYUbPA/exec';
-        let currentData = [];
-
+        
         async function fetchData() {
             const loading = document.getElementById('loading');
             const preview = document.getElementById('previewContainer');
@@ -118,60 +110,59 @@
             try {
                 const response = await fetch(`${SCRIPT_URL}?${params}`);
                 const data = await response.json();
-                currentData = data;
                 renderTable(data);
                 loading.classList.add('hidden');
                 preview.classList.remove('hidden');
             } catch (error) {
-                alert("Error fetching data. Check script URL.");
+                alert("Error fetching data. Check internet connection.");
                 loading.classList.add('hidden');
             }
         }
 
         function renderTable(data) {
-    const headerRow = document.getElementById('tableHeader');
-    const bodyRow = document.getElementById('tableBody');
-    
-    // Header Render
-    headerRow.innerHTML = `<tr>${data.headers.map(h => 
-        `<th class="px-4 py-3 text-left font-bold uppercase tracking-wider border-r border-gray-700 whitespace-nowrap bg-gray-800 text-white sticky top-0 font-sans text-xs">
-            ${h}
-        </th>`).join('')}</tr>`;
+            const headerRow = document.getElementById('tableHeader');
+            const bodyRow = document.getElementById('tableBody');
+            
+            headerRow.innerHTML = `<tr>${data.headers.map(h => `<th class="px-4 py-3 text-left font-bold uppercase text-xs border-r border-gray-700">${h}</th>`).join('')}</tr>`;
 
-    // Body Render with Auto-Increment S/No and Remarks Wrap
-    bodyRow.innerHTML = data.rows.map((row, index) => {
-        return `<tr class="hover:bg-gray-50 transition duration-150">
-            ${row.map((cell, cellIndex) => {
-                // S/No logic (Column A is Index 0)
-                if (cellIndex === 0) {
-                    return `<td class="px-4 py-2 border-r border-gray-200 text-center font-bold">${index + 1}</td>`;
-                }
-                
-                // Remarks logic (Column J is Index 9)
-                if (cellIndex === 9) {
-                    return `<td class="px-4 py-2 border-r border-gray-200 min-w-[300px] max-w-[400px]">
-                                <div class="truncate hover:whitespace-normal cursor-pointer" title="Click to expand">
-                                    ${cell || '-'}
-                                </div>
-                            </td>`;
-                }
-
-                return `<td class="px-4 py-2 whitespace-nowrap border-r border-gray-200">${cell || '-'}</td>`;
-            }).join('')}
-        </tr>`;
-    }).join('');
-}
+            bodyRow.innerHTML = data.rows.map((row, index) => {
+                return `<tr class="hover:bg-gray-50 border-b">
+                    ${row.map((cell, cellIndex) => {
+                        if (cellIndex === 0) return `<td class="px-4 py-2 border-r text-center font-bold">${index + 1}</td>`;
+                        if (cellIndex === 9) return `<td class="px-4 py-2 border-r min-w-[250px] max-w-[400px] break-words">${cell || '-'}</td>`;
+                        return `<td class="px-4 py-2 border-r whitespace-nowrap">${cell || '-'}</td>`;
+                    }).join('')}
+                </tr>`;
+            }).join('');
+        }
 
         function exportToExcel() {
-            const wb = XLSX.utils.table_to_book(document.getElementById('reportTable'), {sheet: "Report"});
+            const table = document.getElementById('reportTable');
+            const wb = XLSX.utils.table_to_book(table, {sheet: "Failure_Report"});
             XLSX.writeFile(wb, "Railway_Report.xlsx");
         }
 
         function exportToPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('l', 'pt', 'a4');
-            doc.autoTable({ html: '#reportTable', theme: 'grid', styles: { fontSize: 7 } });
+            doc.autoTable({ 
+                html: '#reportTable',
+                styles: { fontSize: 7, overflow: 'linebreak' },
+                columnStyles: { 9: { cellWidth: 150 } }
+            });
             doc.save("Railway_Report.pdf");
+        }
+
+        function exportToWord() {
+            let header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org'><head><meta charset='utf-8'></head><body>";
+            let footer = "</body></html>";
+            let sourceHTML = header + document.getElementById("reportTable").outerHTML + footer;
+            let blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
+            let url = URL.createObjectURL(blob);
+            let link = document.createElement("a");
+            link.href = url;
+            link.download = 'Railway_Report.doc';
+            link.click();
         }
     </script>
 </body>
