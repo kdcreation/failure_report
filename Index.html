@@ -4,15 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Railway Signaling Report Dashboard</title>
-    <!-- Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-    <!-- PDF (jsPDF & AutoTable Plugin) - Fixed Full Links -->
-    <script src="https://cdnjs.cloudflare.com"></script>
-    <script src="https://cdnjs.cloudflare.com"></script>
     <style>
         .loader { border-top-color: #3498db; animation: spinner 1.5s linear infinite; }
         @keyframes spinner { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
@@ -33,15 +26,19 @@
         <div class="bg-white p-6 rounded-xl shadow-md grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 border border-gray-200">
             <div>
                 <label class="block text-sm font-medium text-gray-700">From Date</label>
-                <input type="date" id="startDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <input type="date" id="startDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring-blue-500">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">To Date</label>
-                <input type="date" id="endDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                <input type="date" id="endDate" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring-blue-500">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Station Code (Optional)</label>
+                <input type="text" id="stationInput" placeholder="e.g. DHN, GMO" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm focus:ring-blue-500 uppercase">
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Officer</label>
-                <select id="officer" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                <select id="officer" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
                   <option value="">All Officers</option>
                   <option>DSTE/DHN</option><option>DSTE/W/DHN</option><option>ASTE/DHN</option>
                   <option>ASTE/GMO</option><option>ASTE/KQR</option><option>ASTE/BRKA</option>
@@ -50,22 +47,22 @@
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700">Asset Make</label>
-                <select id="asset" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                <select id="asset" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
                   <option value="">All Makes</option>
                   <option>CEL</option><option>GGT</option><option>SIEMNES</option><option>ELDYNE</option>
                 </select>
             </div>
             <div class="md:col-span-2">
                 <label class="block text-sm font-medium text-gray-700">Specific Defect Search</label>
-                <select id="defect" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+                <select id="defect" class="mt-1 block w-full border border-gray-300 rounded-md p-2 shadow-sm">
                     <option value="">-- No Defect Selected --</option>
                     <option value="G/Joint Defective">G/Joint Defective</option>
                     <option value="Cable defective">Cable defective</option>
                     <option value="Obstruction in point">Obstruction in point</option>
                 </select>
             </div>
-            <div class="md:col-span-2 flex items-end">
-                <button onclick="fetchData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200 shadow-md">
+            <div class="md:col-span-1 flex items-end">
+                <button onclick="fetchData()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md shadow-md transition duration-200">
                     Generate Report
                 </button>
             </div>
@@ -75,14 +72,14 @@
         <div id="loading" class="hidden flex justify-center py-10">
             <div class="loader ease-linear rounded-full border-4 border-t-4 border-gray-200 h-12 w-12"></div>
         </div>
-
+     
         <div id="previewContainer" class="hidden bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div class="bg-gray-100 p-4 border-b flex justify-between items-center">
                 <h2 class="text-lg font-semibold text-gray-800">Report Preview</h2>
                 <div class="flex space-x-2">
-                    <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-4 rounded">Download Excel</button>
-                    <button onclick="exportToPDF()" class="bg-red-600 hover:bg-red-700 text-white text-xs py-2 px-4 rounded">Download PDF</button>
-                    <button onclick="exportToWord()" class="bg-gray-600 hover:bg-gray-700 text-white text-xs py-2 px-4 rounded">Download Word</button>
+                    <button onclick="exportToExcel()" class="bg-green-600 hover:bg-green-700 text-white text-xs py-2 px-4 rounded font-bold">Download Excel</button>
+                    <button onclick="exportToWord()" class="bg-gray-600 hover:bg-gray-700 text-white text-xs py-2 px-4 rounded font-bold">Download Word</button>
+                    <button onclick="printReport()" class="bg-red-600 hover:bg-red-700 text-white text-xs py-2 px-4 rounded font-bold shadow-sm">Print Report</button>
                 </div>
             </div>
             <div class="overflow-x-auto max-h-[600px]">
@@ -100,12 +97,14 @@
         async function fetchData() {
             const loading = document.getElementById('loading');
             const preview = document.getElementById('previewContainer');
+            
             loading.classList.remove('hidden');
             preview.classList.add('hidden');
 
             const params = new URLSearchParams({
                 start: document.getElementById('startDate').value,
                 end: document.getElementById('endDate').value,
+                station: document.getElementById('stationInput').value,
                 officer: document.getElementById('officer').value,
                 asset: document.getElementById('asset').value,
                 defect: document.getElementById('defect').value
@@ -140,74 +139,37 @@
             }).join('');
         }
 
-        // EXCEL EXPORT
-function exportToExcel() {
-    try {
-        const table = document.getElementById('reportTable');
-        if (!table || table.rows.length <= 1) return alert("Pehle report generate karein!");
-        
-        // table_to_book table se data uthata hai
-        const wb = XLSX.utils.table_to_book(table, { sheet: "Failure_Report" });
-        XLSX.writeFile(wb, "Railway_Failure_Report.xlsx");
-    } catch (e) {
-        console.error("Excel Error:", e);
-        alert("Excel export mein error: " + e.message);
-    }
-}
-
-        // PDF EXPORT
-function exportToPDF() {
-    try {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF('l', 'pt', 'a4');
-
-        // Check if AutoTable is available globally if not on doc
-        const autoTable = doc.autoTable || window.jspdf.autoTable;
-
-        if (typeof autoTable !== 'function') {
-            // Forcefully try to call it if it's attached to the window
-            if (window.jspdf && typeof window.jspdf.autoTable === 'function') {
-                 window.jspdf.autoTable(doc, {
-                    html: '#reportTable',
-                    theme: 'grid',
-                    styles: { fontSize: 7, overflow: 'linebreak' },
-                    columnStyles: { 9: { cellWidth: 150 } }
-                });
-            } else {
-                throw new Error("AutoTable plugin not found on window or doc object.");
-            }
-        } else {
-            // Standard way
-            doc.autoTable({ 
-                html: '#reportTable',
-                theme: 'grid',
-                styles: { fontSize: 7, overflow: 'linebreak' },
-                columnStyles: { 9: { cellWidth: 150 } },
-                margin: { top: 40 }
-            });
+        function exportToExcel() {
+            const table = document.getElementById('reportTable');
+            if (!table || table.rows.length <= 1) return alert("Pehle report generate karein!");
+            const wb = XLSX.utils.table_to_book(table, { sheet: "Failure_Report" });
+            XLSX.writeFile(wb, "Railway_Failure_Report.xlsx");
         }
 
-        doc.save("Railway_Report.pdf");
-        console.log("PDF Saved successfully!");
-
-    } catch (e) {
-        console.error("Full PDF Error:", e);
-        alert("PDF Export Failed. Please refresh (Ctrl+F5) and try again.");
-    }
-}
-
-
-    // WORD EXPORT
         function exportToWord() {
-            let header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org'><head><meta charset='utf-8'></head><body>";
+            const table = document.getElementById("reportTable");
+            if (!table) return;
+            let header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org'><head><meta charset='utf-8'><style>table{border-collapse:collapse; width:100%;} th,td{border:1px solid black; padding:5px; text-align:left; font-size:10pt;}</style></head><body>";
             let footer = "</body></html>";
-            let sourceHTML = header + document.getElementById("reportTable").outerHTML + footer;
+            let sourceHTML = header + table.outerHTML + footer;
             let blob = new Blob(['\ufeff', sourceHTML], { type: 'application/msword' });
             let url = URL.createObjectURL(blob);
             let link = document.createElement("a");
             link.href = url;
             link.download = 'Railway_Report.doc';
             link.click();
+        }
+
+        function printReport() {
+            const table = document.getElementById("reportTable");
+            if (!table || table.rows.length <= 1) return alert("Pehle report generate karein!");
+            const printWindow = window.open('', '_blank');
+            const style = `<style>@media print { @page { size: landscape; margin: 10mm; } } body { font-family: sans-serif; font-size: 9pt; } h2 { text-align: center; color: #1e40af; } table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #000; padding: 4px; text-align: left; } th { background-color: #eee !important; -webkit-print-color-adjust: exact; }</style>`;
+            printWindow.document.write('<html><head><title>Print Report</title>' + style + '</head><body>');
+            printWindow.document.write('<h2>Railway Signaling Failure Report</h2>' + table.outerHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            setTimeout(() => { printWindow.print(); printWindow.close(); }, 750);
         }
     </script>
 </body>
