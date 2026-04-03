@@ -7,51 +7,174 @@
     <!-- Official SheetJS Stable Library -->
     <script type="text/javascript" src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f4f8; color: #333; padding: 15px; }
-        .container { max-width: 1700px; margin: 0 auto; }
+   <style>
+    /* --- DARKER SOFT-UI BASE --- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    
+    body { 
+        font-family: 'Segoe UI', Roboto, sans-serif; 
+        /* Thoda aur dark bluish-grey background */
+        background-color: #cfd8e3; 
+        color: #1e293b; 
+        padding: 15px; 
+    }
 
-        /* Header & Filters */
-        .header { background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%); color: white; padding: 15px 25px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .filter-panel { background: white; padding: 15px; border-radius: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; border: 1px solid #d1d5db; margin-bottom: 15px; }
-        .filter-group { display: flex; flex-direction: column; }
-        .filter-group label { font-size: 12px; font-weight: bold; color: #4b5563; text-transform: uppercase; margin-bottom: 4px; }
-        .filter-group input, .filter-group select { padding: 10px; border: 1px solid #9ca3af; border-radius: 5px; font-size: 12px; outline: none; }
+    .container { max-width: 1700px; margin: 0 auto; }
 
-        /* Analysis Cards */
-        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 20px; display: none; }
-        .card { background: white; padding: 15px; border-radius: 10px; border-top: 4px solid #2563eb; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); transition: transform 0.2s; }
-        .card-label { font-size: 12px; font-weight: 600; color: #1e3a8a; border-bottom: 2px solid #f3f4f6; margin-bottom: 10px; padding-bottom: 5px; text-transform: uppercase; }
-        
-        .item-row { display: flex; justify-content: space-between; align-items: center; font-size: 13px; padding: 6px 8px; border-bottom: 1px dashed #e5e7eb; cursor: pointer; border-radius: 4px; transition: 0.2s; }
-        .item-row:hover { background: #f1f5f9; }
-        .item-name { font-weight: 600; color: #374151; }
-        
-        /* Clean Down Arrow Icon */
-        .dl-icon { background: #eff6ff; color: #2563eb; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 14px; font-weight: bold; border: 1px solid #dbeafe; }
-        .item-row:hover .dl-icon { background: #2563eb; color: white; border-color: #2563eb; }
+    /* --- DEEP BLUE HEADER --- */
+    .header { 
+        background: linear-gradient(145deg, #162e7a, #1e40af);
+        color: white; 
+        padding: 20px 30px; 
+        border-radius: 20px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 25px; 
+        box-shadow: 8px 8px 16px #a6b1bd, -8px -8px 16px #f8faff;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
 
-        /* Table Section & Remarks Fix */
-        .preview-card { background: white; border-radius: 10px; display: none; border: 1px solid #d1d5db; overflow: hidden; }
-        .table-header { padding: 12px 20px; border-bottom: 1px solid #d1d5db; display: flex; justify-content: space-between; align-items: center; background: #f9fafb; }
-        .table-container { overflow-x: auto; max-height: 500px; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        thead th { background: #1f2937; color: white; padding: 12px; text-align: left; position: sticky; top: 0; z-index: 10; border-right: 1px solid #374151; }
-        tbody td { padding: 10px; border: 1px solid #e5e7eb; white-space: nowrap; }
-        
-        .remarks-cell { 
-            max-width: 240px !important; 
-            overflow: hidden !important; 
-            text-overflow: ellipsis !important; 
-            white-space: nowrap !important; 
-        }
-        tbody tr:hover { background: #f8fafc; }
+    /* --- INSET FILTER PANEL --- */
+    .filter-panel { 
+        background: #cfd8e3;
+        padding: 25px; 
+        border-radius: 20px; 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 20px; 
+        box-shadow: inset 6px 6px 12px #a6b1bd, inset -6px -6px 12px #f8faff;
+        margin-bottom: 25px; 
+        align-items: flex-end;
+    }
 
-        .btn-gen { background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: auto; }
-        .btn-gen:hover { background: #1d4ed8; }
-        #loading { text-align: center; display: none; padding: 30px; font-weight: bold; color: #1e40af; }
-    </style>
+    .filter-group { flex: 1 1 200px; display: flex; flex-direction: column; }
+    .filter-group label { font-size: 11px; font-weight: 800; color: #475569; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; }
+
+    /* Elevated Inputs */
+    .filter-group input, .filter-group select { 
+        height: 45px; 
+        padding: 0 15px; 
+        border: none; 
+        border-radius: 12px; 
+        font-size: 14px; 
+        outline: none; 
+        background: #cfd8e3;
+        color: #0f172a;
+        box-shadow: 5px 5px 10px #a6b1bd, -5px -5px 10px #f8faff;
+        transition: all 0.2s ease;
+    }
+
+    .filter-group input:focus, .filter-group select:focus {
+        box-shadow: inset 3px 3px 6px #a6b1bd, inset -3px -3px 6px #f8faff;
+    }
+
+    /* --- ANALYSIS CARDS --- */
+    .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 25px; display: none; }
+
+    .card { 
+        background: #cfd8e3; 
+        padding: 20px; 
+        border-radius: 20px; 
+        box-shadow: 10px 10px 20px #a6b1bd, -10px -10px 20px #f8faff;
+    }
+
+    .card-label { 
+        font-size: 12px; 
+        font-weight: 800; 
+        color: #1e40af; 
+        margin-bottom: 15px; 
+        padding-bottom: 8px;
+        border-bottom: 2px solid rgba(30, 64, 175, 0.15);
+        text-transform: uppercase; 
+    }
+
+    .item-row { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        font-size: 13px; 
+        padding: 10px; 
+        margin-bottom: 10px;
+        background: #cfd8e3;
+        border-radius: 12px; 
+        box-shadow: 4px 4px 8px #a6b1bd, -4px -4px 8px #f8faff;
+        cursor: pointer; 
+        transition: all 0.2s ease;
+    }
+
+    /* Hover effect - Clickable Depth */
+    .item-row:hover { 
+        box-shadow: inset 3px 3px 7px #a6b1bd, inset -3px -3px 7px #f8faff;
+        transform: translateY(1px);
+        color: #1e40af;
+    }
+
+    .item-name { font-weight: 700; color: #1e293b; }
+
+    /* High Contrast Badge */
+    .item-count-badge { 
+        background: #1e40af; 
+        color: white !important; 
+        padding: 4px 12px; 
+        border-radius: 8px; 
+        font-weight: 800; 
+        font-size: 11px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+    }
+
+    /* --- VIBRANT GENERATE BUTTON --- */
+    .btn-gen { 
+        background: #f59e0b; /* Amber/Orange */
+        color: #0f172a; 
+        border: none; 
+        height: 45px; 
+        padding: 0 35px; 
+        border-radius: 12px; 
+        font-weight: 900; 
+        cursor: pointer; 
+        box-shadow: 6px 6px 12px #a6b1bd, -6px -6px 12px #f8faff;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-gen:hover { 
+        background: #fbbf24;
+        box-shadow: inset 4px 4px 8px #d97706, inset -4px -4px 8px #fbbf24; /* Button Depth Hover */
+        transform: translateY(2px);
+    }
+
+    /* --- TABLE SECTION --- */
+    .preview-card { 
+        background: #cfd8e3; 
+        border-radius: 20px; 
+        display: none; 
+        box-shadow: 12px 12px 24px #a6b1bd, -12px -12px 24px #f8faff;
+        overflow: hidden; 
+    }
+
+    .table-header { padding: 20px 30px; background: rgba(0,0,0,0.03); border-bottom: 1px solid #a6b1bd; display: flex; justify-content: space-between; align-items: center; }
+
+    .table-container { overflow-x: auto; max-height: 550px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+    thead th { background: #0f172a; color: #38bdf8; padding: 15px; text-transform: uppercase; letter-spacing: 1px; position: sticky; top: 0; z-index: 10; }
+
+    tbody td { padding: 12px 15px; border-bottom: 1px solid #a6b1bd; color: #0f172a; font-weight: 500; }
+    tbody tr:hover { background: rgba(255, 255, 255, 0.3); }
+
+    .remarks-cell { max-width: 240px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
+
+    .btn-action { height: 35px; padding: 0 15px; border-radius: 8px; border: none; color: white; cursor: pointer; font-size: 11px; font-weight: 800; box-shadow: 3px 3px 6px #a6b1bd, -3px -3px 6px #f8faff; }
+    
+    #loading { text-align: center; display: none; padding: 40px; font-weight: 800; color: #1e40af; font-size: 20px; text-shadow: 1px 1px 2px #f8faff; }
+</style>
+
+
+
+
 </head>
 <body>
 
@@ -155,7 +278,7 @@
             <option value="Iron chips">Fuse blown</option>
         </select></div>
       
-        <button onclick="fetchData()" class="btn-gen">GENERATE ANALYSIS</button>
+        <button onclick="fetchData()" class="btn-gen">GENERATE</button>
     </div>
 
     <div id="summaryGrid" class="summary-grid">
