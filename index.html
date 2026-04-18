@@ -209,8 +209,75 @@
     .remarks-cell { max-width: 240px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap; }
 
     .btn-action { height: 35px; padding: 0 15px; border-radius: 8px; border: none; color: white; cursor: pointer; font-size: 11px; font-weight: 800; box-shadow: 3px 3px 6px #a6b1bd, -3px -3px 6px #f8faff; }
-    
-    #loading { text-align: center; display: none; padding: 40px; font-weight: 800; color: #1e40af; font-size: 20px; text-shadow: 1px 1px 2px #f8faff; }
+ 
+     /* Loading Data */
+     
+    #loading {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(207, 216, 227, 0.7); /* Soft Theme Overlay */
+    backdrop-filter: blur(12px); /* Deep Premium Blur */
+    z-index: 99999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.premium-loader {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 200px;
+    height: 200px;
+}
+
+/* Glowing Rotating Rings */
+.ring {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border: 4px solid transparent;
+    border-radius: 50%;
+    border-top: 4px solid #1e40af;
+    animation: rotate-ring 1.5s linear infinite;
+}
+
+.ring:nth-child(2) {
+    width: 80%;
+    height: 80%;
+    border-top: 4px solid #3b82f6;
+    animation: rotate-ring 2s linear infinite reverse;
+}
+
+.ring:nth-child(3) {
+    width: 60%;
+    height: 60%;
+    border-top: 4px solid #93c5fd;
+    animation: rotate-ring 1s linear infinite;
+}
+
+.loading-text {
+    position: absolute;
+    bottom: -40px;
+    font-weight: 800;
+    color: #1e40af;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(30, 64, 175, 0.2);
+    white-space: nowrap;
+}
+
+@keyframes rotate-ring {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+
+     
 </style>
 
 
@@ -298,6 +365,7 @@
         <option>TRACK CIRCUIT</option>
         <option>HOME</option>
         <option>STARTER</option>
+        <option>TLBI</option>
         <option>IPS</option>
         <option>UFSBI</option>
         <option>EI</option>
@@ -332,8 +400,15 @@
         <div class="card"><div class="card-label">TOP 5 ASSET MAKES</div><div id="topMakes"></div></div>
         <div class="card" style="border-top-color: #dc2626;"><div class="card-label">TOP 5 ICMS HEADS</div><div id="topICMS"></div></div>
     </div>
-
-    <div id="loading">🔍 Analysing Dhanbad Database...</div>
+<!-- Data Loading-->
+    <div id="loading">
+    <div class="premium-loader">
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <div class="ring"></div>
+        <span class="loading-text">Analysing Failure Database</span>
+    </div>
+</div>
 
     <div id="previewCard" class="preview-card">
         <div class="table-header">
@@ -352,7 +427,15 @@ var globalRows = [];
 var globalHeaders = [];
 
 async function fetchData() {
-    document.getElementById('loading').style.display = 'block';
+    var loader = document.getElementById('loading');
+    
+    // 1. Loader ko dikhao (flex mode mein)
+    loader.style.display = 'flex';
+
+    // 2. Chhota sa pause taaki browser loader ko screen par "draw" kar sake
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Existing elements ko hide karein
     document.getElementById('summaryGrid').style.display = 'none';
     document.getElementById('previewCard').style.display = 'none';
 
@@ -360,8 +443,8 @@ async function fetchData() {
         start: document.getElementById('start').value, 
         end: document.getElementById('end').value,
         station: document.getElementById('station').value, 
-        officer: document.getElementById('off').value, // Backend 'parameter.officer' ke liye
-        make: document.getElementById('make_filter').value, // Backend 'parameter.make' ke liye
+        officer: document.getElementById('off').value, 
+        make: document.getElementById('make_filter').value, 
         icms: document.getElementById('icms_filter').value,
         gear: document.getElementById('gear_filter').value,
         defect: document.getElementById('defect_filter').value
@@ -370,15 +453,25 @@ async function fetchData() {
     try {
         var response = await fetch(SCRIPT_URL + '?' + params.toString());
         var data = await response.json();
+        
         globalRows = data.rows;
         globalHeaders = data.headers;
+        
         runAnalysis(data.rows);
         renderMainTable(data);
-        document.getElementById('loading').style.display = 'none';
+
+        // 3. Sab data aane ke baad loader chhupao
+        loader.style.display = 'none';
         document.getElementById('summaryGrid').style.display = 'grid';
         document.getElementById('previewCard').style.display = 'block';
-    } catch (e) { alert("Error fetching data!"); document.getElementById('loading').style.display = 'none'; }
+
+    } catch (e) { 
+        console.error(e);
+        alert("Error fetching data!"); 
+        loader.style.display = 'none'; 
+    }
 }
+
 
 function runAnalysis(rows) {
     var stats = { off: {}, stn: {}, gear: {}, make: {}, icms: {} };
